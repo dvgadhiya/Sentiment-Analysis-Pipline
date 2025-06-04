@@ -1,6 +1,7 @@
 import logging
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from zenml import step
 from typing_extensions import Annotated
@@ -9,10 +10,10 @@ from src.data_cleaning import DataCleaning, DataPreProcessingStrategyCNN, DataDi
 
 @step
 def clean_df_cnn(df: pd.DataFrame) -> Tuple[
-    Annotated[pd.Series, "X_train"],
-    Annotated[pd.Series, "X_test"],
-    Annotated[pd.Series, "y_train"],
-    Annotated[pd.Series, "y_test"],
+    Annotated[np.ndarray, "X_train"],
+    Annotated[np.ndarray, "X_test"],
+    Annotated[np.ndarray, "y_train"],
+    Annotated[np.ndarray, "y_test"],
     Annotated[dict, "word_index"]
 ]:
     """

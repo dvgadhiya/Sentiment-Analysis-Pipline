@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Union, Tuple
-
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -16,7 +16,9 @@ class DataStrategy(ABC):
     """
 
     @abstractmethod
-    def handle_data(self, data: pd.DataFrame) -> Union[pd.DataFrame, pd.Series]:
+    def handle_data(self, data: pd.DataFrame) -> Union[pd.DataFrame, pd.Series,
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    , dict]:
         pass
 
 class DataPreProcessingStrategy(DataStrategy):
@@ -28,6 +30,7 @@ class DataPreProcessingStrategy(DataStrategy):
         Pre-process data.
         """
         try:
+            data = data.copy()
             maxlen = 100
             data = data.dropna()
             tokenized_texts, tokenized_labels = [], []
@@ -82,11 +85,18 @@ class DataDivideStrategy(DataPreProcessingStrategy):
     """
     Strategy for divide data into train and test set.
     """
-    def handle_data(self, data: pd.DataFrame):
+    def handle_data(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         try:
             X = data["Text_sequences"]
             y = data["Selected_text_sequences"]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            X_train = np.array(X_train)
+            X_test = np.array(X_test)
+            y_train = np.array(y_train)
+            y_test = np.array(y_test)
+            print(type(X_train))
+            print(type(y_train))
+            logging.info("Dividing data into train and test set complete")
             return X_train, X_test, y_train, y_test
         except Exception as e:
             logging.error("Error in dividing data: {}".format(e))
@@ -101,7 +111,11 @@ class DataCleaning:
         self.data = data
         self.strategy = strategy
 
-    def handle_data(self) -> Union[pd.DataFrame,pd.Series]:
+    def handle_data(self) \
+            -> Union[pd.DataFrame,
+                     Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+                     np.ndarray,
+                     dict]:
         """
         handle data
         """
@@ -117,6 +131,7 @@ class DataPreProcessingStrategyCNN(DataStrategy):
     """
     def handle_data(self, data: pd.DataFrame) -> Tuple[pd.DataFrame,dict]:
         try:
+            data = data.copy()
             logging.info("Data preprocessing for CNN Started")
             tokenizer = Tokenizer(oov_token="<OOV>")
             tokenizer.fit_on_texts(data["selected_text"].astype(str))
@@ -138,17 +153,17 @@ class DataDivideStrategyCNN(DataPreProcessingStrategyCNN):
     Strategy for divide data into train and test set.
     """
     def handle_data(self, data: pd.DataFrame) \
-            -> Tuple[pd.DataFrame,pd.DataFrame,pd.Series,pd.Series]:
+            -> Tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
         try:
             logging.info("Data Dividing for CNN Started")
             X = data["Tokenized_Selected_text"]
             y = data["Encoded_Sentiment"]
-            X_train: pd.DataFrame
-            y_train: pd.Series
-            X_test: pd.DataFrame
-            y_test: pd.Series
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             logging.info("Data Dividing for CNN Completed")
+            X_train = np.array(X_train)
+            X_test = np.array(X_test)
+            y_train = np.array(y_train)
+            y_test = np.array(y_test)
             return X_train, X_test, y_train, y_test
         except Exception as e:
             logging.error("Error in dividing data: {}".format(e))

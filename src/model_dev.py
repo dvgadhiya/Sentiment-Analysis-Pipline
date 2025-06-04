@@ -1,12 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
-import tensorflow as tf
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from typing import Union, Any
+
 from tensorflow.keras.models import Model, Sequential
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Embedding, Bidirectional, LSTM, TimeDistributed, Dense, GlobalAveragePooling1D
 import numpy as np
 
@@ -15,7 +11,7 @@ class Model_abs(ABC):
     Abstract class for all models
     """
     @abstractmethod
-    def train(self, X: pd.Series, y: pd.Series, word_index: dict) -> Model:
+    def train(self, X: np.ndarray, y: np.ndarray, word_index: dict) -> Union[Model|Sequential| Any]:
         """
         Trains the model
         Args:
@@ -31,7 +27,7 @@ class LSTM_Model(Model_abs):
     """
     Time Distributed BiDirectional LSTM
     """
-    def train(self, X_train: pd.Series, y_train: pd.Series, word_index: dict,**kwargs) -> Model:
+    def train(self, X_train: np.ndarray, y_train: np.ndarray, word_index: dict,**kwargs) -> Model:
         """
         Trains the model
         Args:
@@ -39,18 +35,19 @@ class LSTM_Model(Model_abs):
             y_train: Training labels
             word_index: Tokenizer index
         Returns:
-            None
+            Model
         """
         try:
-            max_len = 100
-            input1 = Input(shape=(max_len,))
+            input1 = Input(shape=(100,))
             x = Embedding(len(word_index) + 1, 64)(input1)
             x = Bidirectional(LSTM(64, return_sequences=True))(x)
             output1 = TimeDistributed(Dense(3, activation='softmax'))(x)
 
             model1 = Model(input1, output1)
             model1.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-            model1.fit(X_train, y_train[..., np.newaxis], epochs=1, batch_size=32, validation_split=0.1)
+            X_train = np.array(X_train.tolist(), dtype=np.int32)
+            y_train = np.array(y_train.tolist(), dtype=np.int32)
+            model1.fit(X_train, y_train[..., np.newaxis], epochs=5, batch_size=32, validation_split=0.1)
             logging.info("Model trained")
             return model1
         except Exception as e:
@@ -61,7 +58,7 @@ class CNN_Model(Model_abs):
     """
     Textual CNN
     """
-    def train(self, X_train: pd.Series, y_train: pd.Series,word_index: dict,**kwargs) -> Model:
+    def train(self, X_train: np.ndarray, y_train: np.ndarray,word_index: dict,**kwargs) -> Model:
         """
             Trains the model
             Args:
@@ -69,7 +66,7 @@ class CNN_Model(Model_abs):
                 y_train: Training labels
                 word_index: Tokenizer index
             Returns:
-                None
+                Sequential
         """
         try:
             logging.info("Training CNN model")
@@ -80,6 +77,8 @@ class CNN_Model(Model_abs):
                 Dense(3, activation='softmax')
             ])
             model2.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            X_train = np.array(X_train.tolist(), dtype=np.int32)
+            y_train = np.array(y_train.tolist(), dtype=np.int32)
             model2.fit(X_train, y_train, epochs=15, validation_split=0.1)
             logging.info("Training Completed")
             return model2

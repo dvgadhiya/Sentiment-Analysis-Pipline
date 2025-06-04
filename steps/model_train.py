@@ -1,13 +1,17 @@
 import logging
+from typing import Any
+
+import numpy as np
 import pandas as pd
+from tensorflow.python.keras.models import Sequential
 from zenml import step
 from src.model_dev import LSTM_Model, CNN_Model
 from tensorflow.keras.models import Model
 
 @step
 def train_model_LSTM(
-        X_train: pd.Series,
-        y_train: pd.Series,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
         word_index: dict,
 ) -> Model:
     """
@@ -28,10 +32,10 @@ def train_model_LSTM(
 
 @step
 def train_model_CNN(
-        X_train: pd.DataFrame,
-        y_train: pd.Series,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
         word_index: dict,
-) -> Model:
+) -> Any:
     """
     Trains models no ingested data.
 
