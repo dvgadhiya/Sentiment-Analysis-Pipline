@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 import tensorflow as tf
+import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -14,7 +15,7 @@ class Model_abs(ABC):
     Abstract class for all models
     """
     @abstractmethod
-    def train(self, X, y, word_index) -> Model:
+    def train(self, X: pd.Series, y: pd.Series, word_index: dict) -> Model:
         """
         Trains the model
         Args:
@@ -30,7 +31,7 @@ class LSTM_Model(Model_abs):
     """
     Time Distributed BiDirectional LSTM
     """
-    def train(self, X_train, y_train, word_index,**kwargs) -> Model:
+    def train(self, X_train: pd.Series, y_train: pd.Series, word_index: dict,**kwargs) -> Model:
         """
         Trains the model
         Args:
@@ -49,7 +50,7 @@ class LSTM_Model(Model_abs):
 
             model1 = Model(input1, output1)
             model1.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-            model1.fit(X_train, y_train[..., np.newaxis], epochs=10, batch_size=32, validation_split=0.1)
+            model1.fit(X_train, y_train[..., np.newaxis], epochs=1, batch_size=32, validation_split=0.1)
             logging.info("Model trained")
             return model1
         except Exception as e:
@@ -60,14 +61,20 @@ class CNN_Model(Model_abs):
     """
     Textual CNN
     """
-    def train(self, X_train, y_train,word_index,**kwargs) -> Model:
+    def train(self, X_train: pd.Series, y_train: pd.Series,word_index: dict,**kwargs) -> Model:
         """
-
+            Trains the model
+            Args:
+                X_train: Training data
+                y_train: Training labels
+                word_index: Tokenizer index
+            Returns:
+                None
         """
         try:
             logging.info("Training CNN model")
             model2 = Sequential([
-                Embedding(len(word_index.word_index) + 1, 32, input_length=30),
+                Embedding(len(word_index) + 1, 32, input_length=30),
                 GlobalAveragePooling1D(),
                 Dense(32, activation='relu'),
                 Dense(3, activation='softmax')

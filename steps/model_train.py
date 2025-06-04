@@ -6,7 +6,7 @@ from tensorflow.keras.models import Model
 
 @step
 def train_model_LSTM(
-        X_train: pd.DataFrame,
+        X_train: pd.Series,
         y_train: pd.Series,
         word_index: dict,
 ) -> Model:

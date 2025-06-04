@@ -7,7 +7,6 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
 
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -33,7 +32,7 @@ class DataPreProcessingStrategy(DataStrategy):
             data = data.dropna()
             tokenized_texts, tokenized_labels = [], []
             for _, row in data.iterrows():
-                tokens, labels = self.get_token_labels(str(row["text"]), str(row["selected_text"]))
+                tokens, labels = DataPreProcessingStrategy.get_token_labels(str(row["text"]), str(row["selected_text"]))
                 tokenized_texts.append(tokens)
                 tokenized_labels.append(labels)
 
@@ -45,15 +44,15 @@ class DataPreProcessingStrategy(DataStrategy):
 
             X1 = tokenizer.texts_to_sequences([' '.join(t) for t in tokenized_texts])
             y1 = [label_encoder.transform(lab) for lab in tokenized_labels]
-            data["Text_sequences"] = pad_sequences(X1, maxlen=maxlen, padding='post')
-            data["Selected_text_sequences"] = pad_sequences(y1, maxlen=maxlen, padding='post')
+            data.loc[:, "Text_sequences"] = list(pad_sequences(X1, maxlen=maxlen, padding='post'))
+            data.loc[:, "Selected_text_sequences"] = list(pad_sequences(y1, maxlen=maxlen, padding='post'))
             return data,word_index
         except Exception as e:
             logging.error("Error in preprocessing data: {}".format(e))
             raise e
 
     @staticmethod
-    def get_token_labels(self,text: str, selected_text: str) -> Tuple[list,list]:
+    def get_token_labels(text: str, selected_text: str) -> Tuple[list,list]:
         """
         Generates Text and Selected text tokens
         Args:
@@ -83,14 +82,10 @@ class DataDivideStrategy(DataPreProcessingStrategy):
     """
     Strategy for divide data into train and test set.
     """
-    def handle_data(self, data: pd.DataFrame) -> Union[pd.DataFrame,pd.Series]:
+    def handle_data(self, data: pd.DataFrame):
         try:
             X = data["Text_sequences"]
             y = data["Selected_text_sequences"]
-            X_train: pd.DataFrame
-            y_train: pd.Series
-            X_test: pd.DataFrame
-            y_test: pd.Series
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             return X_train, X_test, y_train, y_test
         except Exception as e:
@@ -131,8 +126,8 @@ class DataPreProcessingStrategyCNN(DataStrategy):
             sent_encoder = LabelEncoder()
             encoded_sentiment = sent_encoder.fit_transform(data["sentiment"])
             encoded_sentiment = tf.keras.utils.to_categorical(encoded_sentiment)
-            data["Tokenized_Selected_text"] = list(tokenized_selected_text)
-            data["Encoded_Sentiment"] = list(encoded_sentiment)
+            data.loc[:, "Tokenized_Selected_text"] = list(tokenized_selected_text)
+            data.loc[:, "Encoded_Sentiment"] = list(encoded_sentiment)
             logging.info("Data preprocessing for CNN Completed")
             return data, word_index
         except Exception as e:
@@ -142,7 +137,8 @@ class DataDivideStrategyCNN(DataPreProcessingStrategyCNN):
     """
     Strategy for divide data into train and test set.
     """
-    def handle_data(self, data: pd.DataFrame) -> Union[pd.DataFrame,pd.Series]:
+    def handle_data(self, data: pd.DataFrame) \
+            -> Tuple[pd.DataFrame,pd.DataFrame,pd.Series,pd.Series]:
         try:
             logging.info("Data Dividing for CNN Started")
             X = data["Tokenized_Selected_text"]
